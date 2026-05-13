@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Desktop + mimo 模型部署指南</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --border: #2a2a2a;
+            --fg: #e4e4e4;
+            --muted: #888;
+            --accent: #d4a843;
+            --accent-dim: rgba(212, 168, 67, 0.12);
+            --code-bg: #111;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #ef5350;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.7;
+            padding: 2rem 1rem;
+        }
+        .container { max-width: 860px; margin: 0 auto; }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+            color: var(--accent);
+        }
+        .subtitle {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--fg);
+            margin-top: 2.5rem;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        h2 .step {
+            background: var(--accent);
+            color: #000;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--fg);
+        }
+
+        p { margin-bottom: 0.8rem; }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem 1.4rem;
+            margin: 1rem 0;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem 1.2rem;
+            overflow-x: auto;
+            font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin: 0.8rem 0;
+        }
+        code {
+            font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+            font-size: 0.88em;
+        }
+        .inline-code {
+            background: var(--accent-dim);
+            color: var(--accent);
+            padding: 0.15em 0.45em;
+            border-radius: 4px;
+        }
+
+        .note {
+            border-left: 3px solid var(--warning);
+            background: rgba(255, 152, 0, 0.06);
+            padding: 0.8rem 1.2rem;
+            margin: 1rem 0;
+            border-radius: 0 6px 6px 0;
+        }
+        .note::before {
+            content: "注意";
+            font-weight: 700;
+            color: var(--warning);
+            display: block;
+            margin-bottom: 0.2rem;
+            font-size: 0.85rem;
+        }
+
+        .tip {
+            border-left: 3px solid var(--success);
+            background: rgba(76, 175, 80, 0.06);
+            padding: 0.8rem 1.2rem;
+            margin: 1rem 0;
+            border-radius: 0 6px 6px 0;
+        }
+        .tip::before {
+            content: "提示";
+            font-weight: 700;
+            color: var(--success);
+            display: block;
+            margin-bottom: 0.2rem;
+            font-size: 0.85rem;
+        }
+
+        .danger {
+            border-left: 3px solid var(--danger);
+            background: rgba(239, 83, 80, 0.06);
+            padding: 0.8rem 1.2rem;
+            margin: 1rem 0;
+            border-radius: 0 6px 6px 0;
+        }
+        .danger::before {
+            content: "警告";
+            font-weight: 700;
+            color: var(--danger);
+            display: block;
+            margin-bottom: 0.2rem;
+            font-size: 0.85rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+        li { margin-bottom: 0.4rem; }
+
+        .filepath {
+            word-break: break-all;
+            font-size: 0.88em;
+        }
+
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .arch-flow .box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
+        .arch-flow .arrow {
+            color: var(--accent);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .checklist li {
+            list-style: none;
+            margin-left: 0;
+        }
+        .checklist li::before {
+            content: "☐";
+            margin-right: 0.5rem;
+            color: var(--muted);
+        }
+
+        footer {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        .provider-tab { transition: all 0.15s ease; user-select: none; }
+        .provider-tab:hover { opacity: 0.85; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<h1>Claude Desktop 第三方模型部署指南</h1>
+<p class="subtitle">在 macOS 上配置 Claude Desktop (3p 模式) 通过 claude-remap 代理调用第三方大模型（mimo / GLM / DeepSeek 等）</p>
+
+<!-- ========== 原理 ========== -->
+<h2><span class="step">0</span> 工作原理</h2>
+
+<div class="arch-flow">
+    <div class="box">Claude Desktop<br><small>(模型选择器)</small></div>
+    <span class="arrow">→</span>
+    <div class="box">claude-remap<br><small>本地代理 :9960</small></div>
+    <span class="arrow">→</span>
+    <div class="box">第三方模型 API<br><small>(mimo / GLM / DeepSeek …)</small></div>
+</div>
+
+<p>Claude Desktop 发送请求时使用 Anthropic 模型名（如 <code>claude-sonnet-4-6</code>），本地代理在转发前将模型名替换为目标模型名（如 <code>mimo-v2.5-pro</code>、<code>glm-4-plus</code>），API 响应再原路返回。</p>
+
+<!-- ========== 前置条件 ========== -->
+<h2><span class="step">1</span> 前置条件</h2>
+
+<ul class="checklist">
+    <li>macOS (Intel 或 Apple Silicon)</li>
+    <li>Node.js 18+ 已安装（<code>node -v</code> 验证）</li>
+    <li>Claude Desktop 已安装（3p 版本，即第三方部署模式）</li>
+    <li>已获取第三方模型的 API Key</li>
+</ul>
+
+<!-- ========== Step 2: 启用开发者工具 ========== -->
+<h2><span class="step">3</span> 启用开发者工具（可选）</h2>
+
+<p>方便通过 <kbd>Cmd+Option+I</kbd> 调试网络请求。</p>
+
+<p>文件路径：<code class="filepath">~/Library/Application Support/Claude-3p/developer_settings.json</code></p>
+
+<pre>{
+  "allowDevTools": true
+}</pre>
+
+<!-- ========== Step 4: 安装 claude-remap ========== -->
+<h2><span class="step">3</span> 安装 claude-remap 代理</h2>
+
+<h3>3.1 确认 Node.js 环境</h3>
+
+<pre># 检查 Node.js 版本（需要 18+）
+node -v
+
+# 检查 npm 是否可用
+npm -v</pre>
+
+<div class="note">如果未安装 Node.js，前往 <code>https://nodejs.org</code> 下载 LTS 版本，或使用 Homebrew：<br><code>brew install node</code></div>
+
+<h3>3.2 安装 claude-remap</h3>
+
+<pre># 方式一：全局安装（推荐，后续可直接运行）
+npm install -g claude-remap@1.12.0
+
+# 验证安装
+claude-remap --version
+
+# 方式二：免安装，通过 npx 直接运行（每次会检查更新）
+npx claude-remap@1.12.0 start</pre>
+
+<table>
+    <tr><th>方式</th><th>优点</th><th>缺点</th></tr>
+    <tr><td>全局安装</td><td>启动快，LaunchAgent 配置简单</td><td>需手动更新版本</td></tr>
+    <tr><td>npx 运行</td><td>无需预装，自动使用最新版</td><td>首次启动稍慢</td></tr>
+</table>
+
+<!-- ========== Step 5: 配置 claude-remap ========== -->
+<h2><span class="step">4</span> 配置 claude-remap 代理</h2>
+
+<h3>4.1 创建配置文件</h3>
+
+<p>文件路径：<code class="filepath">~/.claude-remap.json</code></p>
+
+<p>切换供应商时只需修改此文件中的 <code>target</code>、<code>key</code>、<code>models</code> 三个字段，然后重启代理即可。</p>
+
+<table>
+    <tr><th>字段</th><th>说明</th></tr>
+    <tr><td><code>target</code></td><td>供应商的 Anthropic 兼容 API 端点</td></tr>
+    <tr><td><code>key</code></td><td>该供应商的 API Key</td></tr>
+    <tr><td><code>port</code></td><td>本地代理监听端口（固定 9960）</td></tr>
+    <tr><td><code>models</code></td><td>Claude 模型名 → 供应商模型名 的映射表</td></tr>
+</table>
+
+<div class="danger"><code>models</code> 字段名不能写错为 <code>maps</code>，否则代理启动时会报 <code>TypeError: Cannot convert undefined or null to object</code>。</div>
+
+<h3>4.2 供应商配置示例</h3>
+
+<!-- Tab-like selector -->
+<div class="provider-tabs" style="display:flex;gap:0.5rem;margin:1rem 0;flex-wrap:wrap;">
+    <span class="provider-tab active" style="background:var(--accent);color:#000;padding:0.35rem 0.9rem;border-radius:4px;font-size:0.85rem;font-weight:600;cursor:pointer;">小米 mimo</span>
+    <span class="provider-tab" style="background:var(--card);border:1px solid var(--border);padding:0.35rem 0.9rem;border-radius:4px;font-size:0.85rem;cursor:pointer;">智谱 GLM</span>
+    <span class="provider-tab" style="background:var(--card);border:1px solid var(--border);padding:0.35rem 0.9rem;border-radius:4px;font-size:0.85rem;cursor:pointer;">DeepSeek</span>
+</div>
+
+<!-- mimo -->
+<div class="provider-config" id="provider-mimo">
+<div class="card">
+<p><strong>供应商</strong>：小米 mimo &nbsp;|&nbsp; <strong>API 格式</strong>：Anthropic 兼容</p>
+<p><strong>获取 Key</strong>：<code>https://xiaomimimo.com</code></p>
+</div>
+<pre>{
+  "target": "https://token-plan-cn.xiaomimimo.com/anthropic",
+  "key": "<strong>tp-xxxxxxxx</strong>",
+  "port": 9960,
+  "models": {
+    "claude-sonnet-4-6-20250514": "mimo-v2.5-pro",
+    "claude-sonnet-4-6": "mimo-v2.5-pro",
+    "claude-opus-4-6-20250514": "mimo-v2.5-pro",
+    "claude-opus-4-6": "mimo-v2.5-pro",
+    "claude-haiku-4-5-20251001": "mimo-v2.5",
+    "claude-haiku-4-5": "mimo-v2.5"
+  }
+}</pre>
+<table>
+    <tr><th>Claude 模型 (显示名)</th><th>mimo 模型 (实际调用)</th></tr>
+    <tr><td>claude-opus-4-6</td><td>mimo-v2.5-pro</td></tr>
+    <tr><td>claude-sonnet-4-6</td><td>mimo-v2.5-pro</td></tr>
+    <tr><td>claude-haiku-4-5</td><td>mimo-v2.5</td></tr>
+</table>
+</div>
+
+<!-- GLM -->
+<div class="provider-config" id="provider-glm" style="display:none;">
+<div class="card">
+<p><strong>供应商</strong>：智谱 AI (GLM) &nbsp;|&nbsp; <strong>API 格式</strong>：需确认是否提供 Anthropic 兼容端点</p>
+<p><strong>获取 Key</strong>：<code>https://open.bigmodel.cn</code></p>
+</div>
+<pre>{
+  "target": "<strong>GLM 的 Anthropic 兼容端点地址</strong>",
+  "key": "<strong>你的GLM密钥</strong>",
+  "port": 9960,
+  "models": {
+    "claude-sonnet-4-6-20250514": "glm-4-plus",
+    "claude-sonnet-4-6": "glm-4-plus",
+    "claude-opus-4-6-20250514": "glm-4-plus",
+    "claude-opus-4-6": "glm-4-plus",
+    "claude-haiku-4-5-20251001": "glm-4-flash",
+    "claude-haiku-4-5": "glm-4-flash"
+  }
+}</pre>
+<table>
+    <tr><th>Claude 模型 (显示名)</th><th>GLM 模型 (实际调用)</th><th>说明</th></tr>
+    <tr><td>claude-opus-4-6</td><td>glm-4-plus</td><td>高性能模型</td></tr>
+    <tr><td>claude-sonnet-4-6</td><td>glm-4-plus</td><td>高性能模型</td></tr>
+    <tr><td>claude-haiku-4-5</td><td>glm-4-flash</td><td>快速模型</td></tr>
+</table>
+<div class="note">智谱 GLM 原生使用 OpenAI 格式（<code>/v1/chat/completions</code>），需确认是否提供 Anthropic 兼容端点。如果仅有 OpenAI 格式，需要在 claude-remap 和 GLM 之间增加一层格式转换（如使用 <code>openai-to-anthropic</code> 适配器），或使用支持双格式转换的代理工具。</div>
+</div>
+
+<!-- DeepSeek -->
+<div class="provider-config" id="provider-deepseek" style="display:none;">
+<div class="card">
+<p><strong>供应商</strong>：DeepSeek &nbsp;|&nbsp; <strong>API 格式</strong>：需确认是否提供 Anthropic 兼容端点</p>
+<p><strong>获取 Key</strong>：<code>https://platform.deepseek.com</code></p>
+</div>
+<pre>{
+  "target": "<strong>DeepSeek 的 Anthropic 兼容端点地址</strong>",
+  "key": "<strong>你的DeepSeek密钥</strong>",
+  "port": 9960,
+  "models": {
+    "claude-sonnet-4-6-20250514": "deepseek-chat",
+    "claude-sonnet-4-6": "deepseek-chat",
+    "claude-opus-4-6-20250514": "deepseek-chat",
+    "claude-opus-4-6": "deepseek-chat",
+    "claude-haiku-4-5-20251001": "deepseek-chat",
+    "claude-haiku-4-5": "deepseek-chat"
+  }
+}</pre>
+<table>
+    <tr><th>Claude 模型 (显示名)</th><th>DeepSeek 模型 (实际调用)</th><th>说明</th></tr>
+    <tr><td>claude-opus-4-6</td><td>deepseek-chat</td><td>DeepSeek-V3</td></tr>
+    <tr><td>claude-sonnet-4-6</td><td>deepseek-chat</td><td>DeepSeek-V3</td></tr>
+    <tr><td>claude-haiku-4-5</td><td>deepseek-chat</td><td>DeepSeek-V3</td></tr>
+</table>
+<div class="note">DeepSeek 原生使用 OpenAI 格式，与 GLM 相同，需确认是否提供 Anthropic 兼容端点或增加格式转换层。</div>
+</div>
+
+<h3>4.3 切换供应商的操作步骤</h3>
+
+<pre># 1. 编辑代理配置，修改 target / key / models
+nano ~/.claude-remap.json
+
+# 2. 重启 claude-remap 代理（以使新配置生效）
+kill $(lsof -t -i:9960) 2>/dev/null
+npx claude-remap@1.12.0 start &amp;
+
+# 3. 无需修改 Claude Desktop 的网关配置，因为代理地址不变</pre>
+
+<div class="tip">切换供应商只需改 <code>~/.claude-remap.json</code> 并重启代理，Claude Desktop 的网关配置（Step 6）不需要任何改动。</div>
+
+<h3>5.3 启动代理</h3>
+
+<pre># 前台启动（调试用，可看到请求日志）
+npx claude-remap@1.12.0 start
+
+# 后台启动
+nohup npx claude-remap@1.12.0 start &gt; ~/.claude-remap.log 2&gt;&amp;1 &amp;</pre>
+
+<div class="tip">首次运行 <code>npx</code> 会自动下载 claude-remap，后续直接使用缓存。验证代理是否运行：<code>curl http://localhost:9960</code></div>
+
+<!-- ========== Step 6: 配置 Claude Desktop ========== -->
+<h2><span class="step">5</span> 配置 Claude Desktop 网关</h2>
+
+<p>在 Claude Desktop 的设置界面中选择 <strong>"自定义 API 端点"</strong>（Gateway 模式），填入本地代理地址和 API Key。配置会自动保存到以下文件。</p>
+
+<p>文件路径：<code class="filepath">~/Library/Application Support/Claude-3p/configLibrary/&lt;你的用户ID&gt;.json</code></p>
+
+<div class="note">文件名中的 <code>&lt;你的用户ID&gt;</code> 是一串 UUID，在 <code>configLibrary/</code> 目录下查看：<br>
+<code>ls ~/Library/Application\ Support/Claude-3p/configLibrary/</code></div>
+
+<pre>{
+  "disableDeploymentModeChooser": true,
+  "inferenceProvider": "gateway",
+  "inferenceGatewayBaseUrl": "http://localhost:9960",
+  "inferenceGatewayApiKey": "<strong>你的API密钥</strong>",
+  "inferenceGatewayAuthScheme": "x-api-key",
+  "inferenceModels": [
+    { "name": "claude-opus-4-6", "supports1m": true },
+    { "name": "claude-sonnet-4-6", "supports1m": true },
+    { "name": "claude-haiku-4-5" }
+  ]
+}</pre>
+
+<table>
+    <tr><th>字段</th><th>说明</th></tr>
+    <tr><td><code>inferenceProvider</code></td><td>固定为 <code>"gateway"</code>，启用自定义 API 模式</td></tr>
+    <tr><td><code>inferenceGatewayBaseUrl</code></td><td>本地代理地址</td></tr>
+    <tr><td><code>inferenceGatewayApiKey</code></td><td>API Key（转发时由代理替换）</td></tr>
+    <tr><td><code>inferenceGatewayAuthScheme</code></td><td>认证方式，固定 <code>"x-api-key"</code></td></tr>
+    <tr><td><code>inferenceModels</code></td><td>下拉框显示的模型列表。对象格式，<code>supports1m: true</code> 启用 100 万 token 上下文窗口</td></tr>
+    <tr><td><code>disableDeploymentModeChooser</code></td><td>禁用部署模式切换，防止误操作</td></tr>
+</table>
+
+<div class="tip"><code>supports1m: true</code> 为模型启用扩展上下文窗口（100 万 token）。不加此字段则使用默认上下文长度。部分版本也支持字符串简写格式 <code>"claude-opus-4-6[1m]"</code>。</div>
+
+<!-- ========== Step 7: 重启并验证 ========== -->
+<h2><span class="step">6</span> 重启并验证</h2>
+
+<pre># 1. 确保 claude-remap 代理正在运行
+curl http://localhost:9960
+
+# 2. 关闭 Claude Desktop
+killall Claude
+
+# 3. 重新打开 Claude Desktop
+open -a "Claude"</pre>
+
+<h3>验证清单</h3>
+<ul class="checklist">
+    <li>Claude Desktop 正常启动，无 CPU 卡死</li>
+    <li>左下角模型下拉框显示 3 个模型选项</li>
+    <li>选择模型后发送消息，能正常收到回复</li>
+    <li>开发者工具 Network 面板中，请求发往 <code>localhost:9960</code></li>
+</ul>
+
+<!-- ========== 开机自启 ========== -->
+<h2><span class="step">7</span> 设置开机自启（推荐）</h2>
+
+<p>使用 macOS 的 LaunchAgent 实现 claude-remap 开机自动启动。</p>
+
+<p>文件路径：<code class="filepath">~/Library/LaunchAgents/com.claude-remap.plist</code></p>
+
+<pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+    &lt;key&gt;Label&lt;/key&gt;
+    &lt;string&gt;com.claude-remap&lt;/string&gt;
+    &lt;key&gt;ProgramArguments&lt;/key&gt;
+    &lt;array&gt;
+        &lt;string&gt;/usr/local/bin/npx&lt;/string&gt;
+        &lt;string&gt;claude-remap@1.12.0&lt;/string&gt;
+        &lt;string&gt;start&lt;/string&gt;
+    &lt;/array&gt;
+    &lt;key&gt;RunAtLoad&lt;/key&gt;
+    &lt;true/&gt;
+    &lt;key&gt;KeepAlive&lt;/key&gt;
+    &lt;true/&gt;
+    &lt;key&gt;StandardOutPath&lt;/key&gt;
+    &lt;string&gt;/Users/mao/.claude-remap.log&lt;/string&gt;
+    &lt;key&gt;StandardErrorPath&lt;/key&gt;
+    &lt;string&gt;/Users/mao/.claude-remap-error.log&lt;/string&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</pre>
+
+<pre># 加载 LaunchAgent（立即生效 + 开机自启）
+launchctl load ~/Library/LaunchAgents/com.claude-remap.plist
+
+# 卸载（取消自启）
+launchctl unload ~/Library/LaunchAgents/com.claude-remap.plist</pre>
+
+<div class="note">请将 plist 中的路径替换为你系统上的实际路径：<br>
+- npx 路径：<code>which npx</code> 查看<br>
+- 用户目录：将 <code>/Users/mao</code> 替换为你的用户目录<br>
+- 如果全局安装了 claude-remap，可直接使用 <code>claude-remap</code> 命令路径（<code>which claude-remap</code> 查看）</div>
+
+<!-- ========== 常见问题 ========== -->
+<h2>常见问题</h2>
+
+<div class="card">
+<h3>Q: 模型下拉框只显示 Claude 模型名，能显示 mimo 模型名吗？</h3>
+<p>Claude Desktop v1.6259.1 及以上版本强制验证模型名必须为 Anthropic 官方模型名。因此下拉框显示的是 Claude 模型名（如 "Claude Sonnet 4.6"），但实际请求会通过代理自动转换为 mimo 模型。</p>
+<p>如果需要下拉框直接显示自定义模型名，需要降级到 v1.5354.0 以下版本（但该版本功能较少且官方已停止分发）。</p>
+</div>
+
+<div class="card">
+<h3>Q: 发送消息后报 "Not supported model"</h3>
+<p>说明请求未经过 claude-remap 代理。检查：<br>
+1. 代理是否运行：<code>curl http://localhost:9960</code><br>
+2. 网关配置中 <code>inferenceGatewayBaseUrl</code> 是否为 <code>http://localhost:9960</code><br>
+3. <code>~/.claude-remap.json</code> 中模型映射是否正确</p>
+</div>
+
+<div class="card">
+<h3>Q: claude-remap 启动报 TypeError</h3>
+<p>确认 <code>~/.claude-remap.json</code> 中模型映射字段名为 <code>"models"</code>（不是 <code>"maps"</code>），且 JSON 格式合法。</p>
+</div>
+
+<div class="card">
+<h3>Q: 重启电脑后 Claude Desktop 无法使用</h3>
+<p>claude-remap 代理进程不会随系统重启自动启动。按 <strong>Step 6</strong> 配置 LaunchAgent 实现开机自启，或手动运行 <code>npx claude-remap@1.12.0 start</code>。</p>
+</div>
+
+<!-- ========== 文件路径汇总 ========== -->
+<h2>文件路径汇总</h2>
+
+<table>
+    <tr><th>文件</th><th>路径</th></tr>
+    <tr><td>应用主配置</td><td><code class="filepath">~/Library/Application Support/Claude-3p/claude_desktop_config.json</code></td></tr>
+    <tr><td>开发者设置</td><td><code class="filepath">~/Library/Application Support/Claude-3p/developer_settings.json</code></td></tr>
+    <tr><td>网关配置</td><td><code class="filepath">~/Library/Application Support/Claude-3p/configLibrary/&lt;用户ID&gt;.json</code></td></tr>
+    <tr><td>代理配置</td><td><code class="filepath">~/.claude-remap.json</code></td></tr>
+    <tr><td>自启服务</td><td><code class="filepath">~/Library/LaunchAgents/com.claude-remap.plist</code></td></tr>
+</table>
+
+<footer>
+    Claude Desktop 第三方模型部署指南 &middot; 2026-05-13
+</footer>
+
+</div>
+
+<script>
+document.querySelectorAll('.provider-tabs .provider-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.provider-tabs .provider-tab').forEach(t => {
+            t.style.background = 'var(--card)';
+            t.style.color = 'var(--fg)';
+            t.style.border = '1px solid var(--border)';
+        });
+        tab.style.background = 'var(--accent)';
+        tab.style.color = '#000';
+        tab.style.border = 'none';
+
+        const name = tab.textContent.trim().toLowerCase();
+        document.querySelectorAll('.provider-config').forEach(c => c.style.display = 'none');
+        const mapping = { '小米 mimo': 'provider-mimo', '智谱 glm': 'provider-glm', 'deepseek': 'provider-deepseek' };
+        const target = mapping[name];
+        if (target) document.getElementById(target).style.display = 'block';
+    });
+});
+</script>
+</body>
+</html>
