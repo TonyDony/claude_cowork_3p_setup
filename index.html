@@ -509,9 +509,9 @@ open -a "Claude"</pre>
     &lt;key&gt;KeepAlive&lt;/key&gt;
     &lt;true/&gt;
     &lt;key&gt;StandardOutPath&lt;/key&gt;
-    &lt;string&gt;/Users/mao/.claude-remap.log&lt;/string&gt;
+    &lt;string&gt;/Users/{computer_name}/.claude-remap.log&lt;/string&gt;
     &lt;key&gt;StandardErrorPath&lt;/key&gt;
-    &lt;string&gt;/Users/mao/.claude-remap-error.log&lt;/string&gt;
+    &lt;string&gt;/Users/{computer_name}/.claude-remap-error.log&lt;/string&gt;
 &lt;/dict&gt;
 &lt;/plist&gt;</pre>
 
@@ -523,7 +523,7 @@ launchctl unload ~/Library/LaunchAgents/com.claude-remap.plist</pre>
 
 <div class="note">请将 plist 中的路径替换为你系统上的实际路径：<br>
 - npx 路径：<code>which npx</code> 查看<br>
-- 用户目录：将 <code>/Users/mao</code> 替换为你的用户目录<br>
+- 用户目录：将 <code>/Users/{computer_name}</code> 替换为你的用户目录<br>
 - 如果全局安装了 claude-remap，可直接使用 <code>claude-remap</code> 命令路径（<code>which claude-remap</code> 查看）</div>
 
 <!-- ========== 常见问题 ========== -->
